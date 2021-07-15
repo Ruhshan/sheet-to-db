@@ -1,0 +1,13 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: GoogleForms
+      POSTGRES_USER: rynal
+      POSTGRES_PASSWORD: 1q2w3e4r
+    ports:
+      - 5432:5432
