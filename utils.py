@@ -1,6 +1,7 @@
 # import psycopg2
 from config import config
-from psycopg2 import sql, connect
+#from psycopg2 import sql, connect
+import pymssql
 import pandas as pd
 from collections import Counter
 
@@ -9,10 +10,10 @@ def get_columns_names(table):
     # declare an empty list for the column names
     columns = []
     params = config()
-    conn = connect(
-        dbname = params['database'],
+    conn = pymssql.connect(
+        database = params['database'],
         user = params['user'],
-        host = params['host'],
+        server = params['host']+":"+params["port"],
         password = params['password']
     )
 
@@ -25,16 +26,16 @@ def get_columns_names(table):
     col_names_str += "table_name = '{}';".format( table )
 
     try:
-        sql_object = sql.SQL(
-            # pass SQL statement to sql.SQL() method
-            col_names_str
-        ).format(
-            # pass the identifier to the Identifier() method
-            sql.Identifier( table )
-        )
+        # sql_object = sql.SQL(
+        #     # pass SQL statement to sql.SQL() method
+        #     col_names_str
+        # ).format(
+        #     # pass the identifier to the Identifier() method
+        #     sql.Identifier( table )
+        # )
 
         # execute the SQL string to get list with col names in a tuple
-        col_cursor.execute( sql_object )
+        col_cursor.execute( col_names_str )
 
         # get the tuple element from the liast
         col_names = ( col_cursor.fetchall() )
@@ -68,13 +69,13 @@ def insert_to_db(df,connection, table_name):
 
 
 def check_table(table_name):
-    sql_str = "select * from information_schema.tables where table_schema='public' and table_name='{}'".format(table_name)
+    sql_str = "select * from information_schema.tables where table_schema='dbo' and table_name='{}'".format(table_name)
     params = config()
-    conn = connect(
-        dbname=params['database'],
-        user=params['user'],
-        host=params['host'],
-        password=params['password']
+    conn = pymssql.connect(
+        database = params['database'],
+        user = params['user'],
+        server = params['host']+":"+params["port"],
+        password = params['password']
     )
     cursor = conn.cursor()
     cursor.execute(sql_str)
@@ -85,17 +86,17 @@ def check_table(table_name):
 def create_new_column_if_required(table_name, current_df_columns):
     current_table_columns = get_columns_names(table_name)
     params = config()
-    conn = connect(
-        dbname=params['database'],
-        user=params['user'],
-        host=params['host'],
-        password=params['password']
+    conn = pymssql.connect(
+        database = params['database'],
+        user = params['user'],
+        server = params['host']+":"+params["port"],
+        password = params['password']
     )
 
     for df_column in current_df_columns:
         if df_column not in current_table_columns:
             print("Add {} in {}".format(df_column, table_name))
-            sql = 'ALTER TABLE {} ADD COLUMN "{}" VARCHAR ;'.format(table_name, df_column)
+            sql = 'ALTER TABLE "{}" ADD "{}" varchar(max);'.format(table_name, df_column)
             cursor = conn.cursor()
             cursor.execute(sql)
             conn.commit()

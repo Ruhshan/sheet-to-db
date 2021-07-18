@@ -91,7 +91,7 @@ def insertData():
         df = df[list(selectedFields.keys())]
         df = df.rename(columns=selectedFields, inplace=False)
         params = config()
-        engine = create_engine('postgresql://{user}:{password}@{host}:{port}/{db}'.format(
+        engine = create_engine('mssql+pymssql://{user}:{password}@{host}:{port}/{db}'.format(
             user=params['user'],
             password=params['password'],
             host=params['host'],
