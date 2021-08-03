@@ -58,6 +58,8 @@ drop.pack(padx=5, pady=5)
 
 df = None
 checkStats = list()
+checkDupes = list()
+choose_field_frame = None
 insertButton = None
 
 
@@ -120,28 +122,46 @@ def chooseFields():
         global messageLabel
         global df
         global checkStats
-        sheet = sheetName.get()
-        frame_1 = Frame(root)
-        frame_1.pack(side=TOP,fill=X)
+        global checkDupes
+        global choose_field_frame
 
-        df = response_sheets[sheet]
-        for checkStat in checkStats:
-            checkStat[-2].destroy()
-            checkStat[-1].destroy()
+        sheet = sheetName.get()
+
+        if choose_field_frame is not None:
+            choose_field_frame.destroy()
+
         if insertButton is not None:
             insertButton.destroy()
+
+        choose_field_frame = Frame(root)
+        choose_field_frame.pack(side=TOP,fill=X)
+
+        df = response_sheets[sheet]
+
         checkStats = [[BooleanVar(), col] for col in list(df.columns)]
-        stat_count = 0
+        stat_count = 1
+        label_select_column = Label(choose_field_frame,text="Select columns for insertion")
+        label_select_column.grid(sticky="w",row=0, column=1)
         for checkStat in checkStats:
             checkStat[0].set(False)
-            checkStat.append(Checkbutton(frame_1, text=checkStat[1], var=checkStat[0]))
-            checkStat.append(Entry(frame_1))
-            #checkStat[-2].pack(padx=50, anchor="w")
+            checkStat.append(Checkbutton(choose_field_frame, text=checkStat[1], var=checkStat[0]))
+            checkStat.append(Entry(choose_field_frame))
             checkStat[-2].grid(row=stat_count,column=1, sticky="w")
             checkStat[-1].insert(0, "Enter new name:")
-            #checkStat[-1].pack(padx=50, anchor="w", pady=1)
             checkStat[-1].grid(row=stat_count+1, column=1)
             stat_count += 2
+
+        checkDupes =[[BooleanVar(), col] for col in list(df.columns)]
+
+        label_dup_check = Label(choose_field_frame, text="Select columns for duplication check")
+        label_dup_check.grid(sticky=E, row=0, column=2, padx=30)
+
+        stat_count = 1
+        for checkDupe in checkDupes:
+            checkDupe[0].set(False)
+            checkDupe.append(Checkbutton(choose_field_frame, text=checkDupe[1], var=checkDupe[0]))
+            checkDupe[-1].grid(row=stat_count, column = 2, sticky=W, padx=30)
+            stat_count+=2
 
         insertButton = Button(root, text="Insert responses into select table", command=insertData)
         insertButton.pack(padx=5, pady=5)
