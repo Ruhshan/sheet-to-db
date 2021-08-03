@@ -4,6 +4,8 @@ from config import config
 import pymssql
 import pandas as pd
 from collections import Counter
+from tkinter import Toplevel
+import tkinter as tk
 
 def get_columns_names(table):
 
@@ -56,7 +58,8 @@ def get_columns_names(table):
     return columns
 
 
-def insert_to_db(df,connection, table_name):
+def insert_to_db(df,connection, table_name, tk_root):
+    take_confirmation(root_tk=tk_root)
     if check_table(table_name):
         print("Appeding to existing table")
         create_new_column_if_required(table_name, df.columns)
@@ -100,3 +103,34 @@ def create_new_column_if_required(table_name, current_df_columns):
             cursor = conn.cursor()
             cursor.execute(sql)
             conn.commit()
+
+def take_confirmation(root_tk):
+    confirmation = Toplevel(root_tk)
+    confirmation.geometry("200x300")
+    label_data_in_sheet = tk.Label(confirmation, text="Data in sheet:")
+    real_data_in_sheet = tk.Label(confirmation, text="a=b;c=d;e=f")
+    label_data_in_sheet.grid(row=1,column=1)
+    real_data_in_sheet.grid(row=1,column=2)
+    label_data_in_db = tk.Label(confirmation, text="Data in db:")
+    real_data_in_db = tk.Label(confirmation, text="a=b;c=d;e=f")
+    label_data_in_db.grid(row=2, column=1)
+    real_data_in_db.grid(row=2, column=2)
+
+    button_replace = tk.Button(confirmation, text="Replace")
+    button_append = tk.Button(confirmation, text="Append")
+    button_skip = tk.Button(confirmation, text="Skip")
+
+    button_replace.grid(row=3,column=1)
+    button_append.grid(row=3, column=2)
+    button_skip.grid(row=3, column=3)
+
+    # my_str1 = tk.StringVar()
+    # l1 = tk.Label(confirmation, textvariable=my_str1)
+    # l1.grid(row=1, column=2)
+    # my_str1.set("Hi I am Child window")
+    # b2 = tk.Button(confirmation, text=' Close parent',)
+    # b2.grid(row=2, column=2)
+    #
+    # b3 = tk.Button(confirmation, text=' Close Child',
+    #                command=confirmation.destroy)
+    # b3.grid(row=3, column=2)

@@ -5,7 +5,7 @@ from utils import *
 from config import config
 from sqlalchemy import create_engine
 from tkinter import *
-
+import tkinter as tk
 # Create object
 root = Tk()
 # Adjust size
@@ -106,7 +106,7 @@ def insertData():
             messageLabel.config(text="enter a valid table name")
             return
         # df.to_sql(table, con=conn, if_exists='replace', index=False)
-        new_rows_count = insert_to_db(df, conn, table)
+        new_rows_count = insert_to_db(df, conn, table, root)
         messageLabel.config(text="Insert Successful! with {} rows".format(new_rows_count))
         mark_unmarked_rows(sheetName.get())
     except Exception as e:
@@ -121,6 +121,9 @@ def chooseFields():
         global df
         global checkStats
         sheet = sheetName.get()
+        frame_1 = Frame(root)
+        frame_1.pack(side=TOP,fill=X)
+
         df = response_sheets[sheet]
         for checkStat in checkStats:
             checkStat[-2].destroy()
@@ -128,14 +131,18 @@ def chooseFields():
         if insertButton is not None:
             insertButton.destroy()
         checkStats = [[BooleanVar(), col] for col in list(df.columns)]
-
+        stat_count = 0
         for checkStat in checkStats:
             checkStat[0].set(False)
-            checkStat.append(Checkbutton(root, text=checkStat[1], var=checkStat[0]))
-            checkStat.append(Entry(root))
-            checkStat[-2].pack(padx=50, anchor="w")
+            checkStat.append(Checkbutton(frame_1, text=checkStat[1], var=checkStat[0]))
+            checkStat.append(Entry(frame_1))
+            #checkStat[-2].pack(padx=50, anchor="w")
+            checkStat[-2].grid(row=stat_count,column=1, sticky="w")
             checkStat[-1].insert(0, "Enter new name:")
-            checkStat[-1].pack(padx=50, anchor="w", pady=1)
+            #checkStat[-1].pack(padx=50, anchor="w", pady=1)
+            checkStat[-1].grid(row=stat_count+1, column=1)
+            stat_count += 2
+
         insertButton = Button(root, text="Insert responses into select table", command=insertData)
         insertButton.pack(padx=5, pady=5)
 
