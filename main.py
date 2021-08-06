@@ -76,6 +76,7 @@ def refetch_sheet(sheet_name):
 def insertData():
     try:
         global checkStats
+        global checkDupes
         df = get_new_rows(sheetName.get())
         if (df.shape[0]) == 0:
             return
@@ -88,8 +89,14 @@ def insertData():
                     selectedFields[field[1]] = field[1]
                 else:
                     selectedFields[field[1]] = field[-1].get()
+
         if len(selectedFields) == 0:
             return
+        selectedFieldsForDupeCheck = []
+        for field in checkDupes:
+            if field[0].get() and selectedFields.get(field[1]):
+                selectedFieldsForDupeCheck.append(selectedFields.get(field[1]))
+
         df = df[list(selectedFields.keys())]
         df = df.rename(columns=selectedFields, inplace=False)
         params = config()
@@ -100,7 +107,7 @@ def insertData():
             port=params['port'],
             db=params['database']
         ))
-        df.to_csv
+
         conn = engine.connect()
         table = tableName.get()
         messageLabel.config(text="".format(df.shape[0]))
