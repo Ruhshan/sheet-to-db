@@ -1,4 +1,4 @@
-from sqlalchemy.dialects.mssql import pymssql
+import pymssql
 from config import config
 
 

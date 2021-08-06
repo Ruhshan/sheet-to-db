@@ -6,6 +6,7 @@ import pandas as pd
 from collections import Counter
 from tkinter import Toplevel
 import tkinter as tk
+from db_handler import DbHandler
 
 def get_columns_names(table):
 
@@ -73,14 +74,20 @@ def get_columns_names(table):
 def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
     if check_table(table_name):
         records = df.to_dict('records')
-        ## iterate over each row
+
         for record in records:
-            check_query = create_check_query(record, table_name, dupeCheckFields)
-            print(check_query)
-        ### Create query to see if the row with selected fields for dupe check exists in db
-        ## if not insert it
-        ## if yes show prompt
-        print("ok")
+            has_duplicate, phys_loc = DbHandler.check_duplicate(record, table_name, dupeCheckFields)
+            if has_duplicate:
+                print("Found duplicate for record: ", record)
+
+            if not has_duplicate:
+                try:
+                    DbHandler.create_new_row(record, table_name)
+                except Exception as e:
+                    print("Unable to insert row", record)
+                    print("Caught Exception", e)
+
+
     else:
         print("insert all")
 
@@ -149,11 +156,3 @@ def take_confirmation(root_tk):
     #                command=confirmation.destroy)
     # b3.grid(row=3, column=2)
 
-def create_check_query(row:dict, table, dupeCheckFields):
-    params = config()
-    query = "select * from '{}.dbo.{}' where ".format(params['database'], table)
-    where_clauses = []
-    for (key,value) in row.items():
-        if key in dupeCheckFields:
-            where_clauses.append(" {}='{}'".format(key, value))
-    return query+ " and ".join(where_clauses)
