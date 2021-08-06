@@ -58,17 +58,31 @@ def get_columns_names(table):
     return columns
 
 
-def insert_to_db(df,connection, table_name, tk_root):
-    take_confirmation(root_tk=tk_root)
+# def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
+#     #take_confirmation(root_tk=tk_root)
+#     if check_table(table_name):
+#         print("Appeding to existing table")
+#         create_new_column_if_required(table_name, df.columns)
+#         df.to_sql(table_name, con=connection, if_exists='append', index=False)
+#         return df.shape[0]
+#     else:
+#         print('Creating new table')
+#         df.to_sql(table_name, con=connection, if_exists='replace', index=False)
+#         return df.shape[0]
+
+def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
     if check_table(table_name):
-        print("Appeding to existing table")
-        create_new_column_if_required(table_name, df.columns)
-        df.to_sql(table_name, con=connection, if_exists='append', index=False)
-        return df.shape[0]
+        records = df.to_dict('records')
+        ## iterate over each row
+        for record in records:
+            check_query = create_check_query(record, table_name, dupeCheckFields)
+            print(check_query)
+        ### Create query to see if the row with selected fields for dupe check exists in db
+        ## if not insert it
+        ## if yes show prompt
+        print("ok")
     else:
-        print('Creating new table')
-        df.to_sql(table_name, con=connection, if_exists='replace', index=False)
-        return df.shape[0]
+        print("insert all")
 
 
 def check_table(table_name):
@@ -134,3 +148,12 @@ def take_confirmation(root_tk):
     # b3 = tk.Button(confirmation, text=' Close Child',
     #                command=confirmation.destroy)
     # b3.grid(row=3, column=2)
+
+def create_check_query(row:dict, table, dupeCheckFields):
+    params = config()
+    query = "select * from '{}.dbo.{}' where ".format(params['database'], table)
+    where_clauses = []
+    for (key,value) in row.items():
+        if key in dupeCheckFields:
+            where_clauses.append(" {}='{}'".format(key, value))
+    return query+ " and ".join(where_clauses)
