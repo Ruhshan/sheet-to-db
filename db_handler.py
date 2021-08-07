@@ -26,6 +26,7 @@ class DbHandler:
 
     @classmethod
     def create_new_row(cls, row: dict, table):
+        print("Inserting ", row)
         params = config()
         query = f"INSERT INTO {params['database']}.dbo.{table} "
         keys = [f"[{key}]" for key in row.keys()]
@@ -34,9 +35,44 @@ class DbHandler:
         final_insert_query = query +f" ({', '.join(keys)}) VALUES ({', '.join(values)})"
 
         conn = ConnectionHelper.getConnection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(final_insert_query)
+            conn.commit()
+            return True
+        except Exception as e:
+            print("Unable to insert row", row)
+            print("Caught Exception", e)
+        return False
+
+    @classmethod
+    def replace_at_phys_loc(cls, row, table, physLoc):
+        stringed = str(physLoc)
+        converted_physloc = "0x"+stringed.replace('\\x','').replace('b','').replace("'","")
+        print("Replacing", row, "at", converted_physloc)
+        """ UPDATE msdb.dbo.mytable SET [Shirt size] = N'XXL' WHERE Timestamp LIKE N'8/4/2021 13:10:07' ESCAPE '#' AND Name LIKE N'James' ESCAPE '#' AND [Shirt size] LIKE N'X' ESCAPE '#' AND [Other thoughts or comments] LIKE N'Very very Poor' ESCAPE '#' AND %%physloc%% = 0x1506000001000000"""
+        params = config()
+        update_query = f"UPDATE {params['database']}.dbo.{table} SET "
+        set_clauses = []
+        for key,value in row.items():
+            set_clauses.append(f"[{key}]=N'{value}'")
+
+        update_query += ",".join(set_clauses) +F" WHERE %%physloc%% = {converted_physloc}"
+
+        print(update_query)
+
+        conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
-        cursor.execute(final_insert_query)
-        conn.commit()
+        try:
+            cursor.execute(update_query)
+            conn.commit()
+            return True
+        except Exception as e:
+            print("Unable to replace row ", row,"in ",converted_physloc)
+            print("Caught Exception", e)
+        return False
+
+
 
 
 

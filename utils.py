@@ -7,6 +7,14 @@ from collections import Counter
 from tkinter import Toplevel
 import tkinter as tk
 from db_handler import DbHandler
+from enum import Enum
+
+class Command(Enum):
+    REPLACE = "REPLACE"
+    APPEND = "APPEND"
+    SKIP = "SKIP"
+
+
 
 def get_columns_names(table):
 
@@ -79,13 +87,15 @@ def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
             has_duplicate, phys_loc = DbHandler.check_duplicate(record, table_name, dupeCheckFields)
             if has_duplicate:
                 print("Found duplicate for record: ", record)
-
-            if not has_duplicate:
-                try:
+                command = check_prompt(record, table_name, phys_loc)
+                if command == Command.REPLACE:
+                    DbHandler.replace_at_phys_loc(record, table_name, phys_loc)
+                elif command == Command.APPEND:
                     DbHandler.create_new_row(record, table_name)
-                except Exception as e:
-                    print("Unable to insert row", record)
-                    print("Caught Exception", e)
+                else:
+                    print("Skipping", record)
+            if not has_duplicate:
+                DbHandler.create_new_row(record, table_name)
 
 
     else:
@@ -156,3 +166,6 @@ def take_confirmation(root_tk):
     #                command=confirmation.destroy)
     # b3.grid(row=3, column=2)
 
+
+def check_prompt(row, table_name, phys_loc):
+    return Command.APPEND
