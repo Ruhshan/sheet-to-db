@@ -115,7 +115,7 @@ def insertData():
             messageLabel.config(text="enter a valid table name")
             return
         # df.to_sql(table, con=conn, if_exists='replace', index=False)
-        new_rows_count = insert_to_db(df, conn, table, root)
+        new_rows_count = insert_to_db(df, conn, table, root, selectedFieldsForDupeCheck)
         messageLabel.config(text="Insert Successful! with {} rows".format(new_rows_count))
         mark_unmarked_rows(sheetName.get())
     except Exception as e:

@@ -72,7 +72,14 @@ class DbHandler:
     @classmethod
     def convert_phyloc(cls, physLoc):
         stringed = str(physLoc)
-        converted_physloc = "0x" + stringed.replace('\\x', '').replace('b', '').replace("'", "")
+        converted_physloc = "0x" + stringed.replace('\\x', '').replace('b', '').replace("'", "")\
+            .replace("\\a","07")\
+            .replace("\\b","08")\
+            .replace("\\t","09")\
+            .replace('\\n','0A')\
+            .replace('\\v','0B')\
+            .replace('\\f','0C')\
+            .replace("\\r","0D")
         return converted_physloc
 
     @classmethod
@@ -80,6 +87,8 @@ class DbHandler:
         params = config()
         converted_physloc = cls.convert_phyloc(physLoc)
         select_query = f"SELECT * FROM {params['database']}.dbo.{table} WHERE  %%physloc%% = {converted_physloc}"
+        print(physLoc)
+        print(select_query)
 
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()

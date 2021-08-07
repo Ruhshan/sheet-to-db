@@ -177,6 +177,7 @@ def check_prompt(row, table_name, phys_loc, root_tk):
     command = tk.IntVar()
     confirmation = Toplevel(root_tk)
     confirmation.geometry("800x100")
+    confirmation.title("Duplicate found in DB")
     data_in_db = DbHandler.get_values_in_physloc(phys_loc, get_columns_names(table_name), table_name)
     label_data_in_sheet = tk.Label(confirmation, text="Data in sheet:")
     real_data_in_sheet = tk.Label(confirmation, text=str(row))
