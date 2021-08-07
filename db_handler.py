@@ -47,8 +47,7 @@ class DbHandler:
 
     @classmethod
     def replace_at_phys_loc(cls, row, table, physLoc):
-        stringed = str(physLoc)
-        converted_physloc = "0x"+stringed.replace('\\x','').replace('b','').replace("'","")
+        converted_physloc = cls.convert_phyloc(physLoc)
         print("Replacing", row, "at", converted_physloc)
         """ UPDATE msdb.dbo.mytable SET [Shirt size] = N'XXL' WHERE Timestamp LIKE N'8/4/2021 13:10:07' ESCAPE '#' AND Name LIKE N'James' ESCAPE '#' AND [Shirt size] LIKE N'X' ESCAPE '#' AND [Other thoughts or comments] LIKE N'Very very Poor' ESCAPE '#' AND %%physloc%% = 0x1506000001000000"""
         params = config()
@@ -58,8 +57,6 @@ class DbHandler:
             set_clauses.append(f"[{key}]=N'{value}'")
 
         update_query += ",".join(set_clauses) +F" WHERE %%physloc%% = {converted_physloc}"
-
-        print(update_query)
 
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
@@ -71,6 +68,29 @@ class DbHandler:
             print("Unable to replace row ", row,"in ",converted_physloc)
             print("Caught Exception", e)
         return False
+
+    @classmethod
+    def convert_phyloc(cls, physLoc):
+        stringed = str(physLoc)
+        converted_physloc = "0x" + stringed.replace('\\x', '').replace('b', '').replace("'", "")
+        return converted_physloc
+
+    @classmethod
+    def get_values_in_physloc(cls, physLoc, columns, table):
+        params = config()
+        converted_physloc = cls.convert_phyloc(physLoc)
+        select_query = f"SELECT * FROM {params['database']}.dbo.{table} WHERE  %%physloc%% = {converted_physloc}"
+
+        conn = ConnectionHelper.getConnection()
+        cursor = conn.cursor()
+        cursor.execute(select_query)
+        value_in_db = {}
+        res = cursor.fetchall()
+        if len(res)>0:
+            for key,value in list(zip(columns, res[0])):
+                value_in_db[key]=value
+
+        return str(value_in_db)
 
 
 

@@ -80,26 +80,32 @@ def get_columns_names(table):
 #         return df.shape[0]
 
 def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
+    count = 0
     if check_table(table_name):
         records = df.to_dict('records')
 
         for record in records:
+            success = False
             has_duplicate, phys_loc = DbHandler.check_duplicate(record, table_name, dupeCheckFields)
             if has_duplicate:
                 print("Found duplicate for record: ", record)
-                command = check_prompt(record, table_name, phys_loc)
+                command = check_prompt(record, table_name, phys_loc, tk_root)
                 if command == Command.REPLACE:
-                    DbHandler.replace_at_phys_loc(record, table_name, phys_loc)
+                    success = DbHandler.replace_at_phys_loc(record, table_name, phys_loc)
                 elif command == Command.APPEND:
-                    DbHandler.create_new_row(record, table_name)
+                    success = DbHandler.create_new_row(record, table_name)
                 else:
                     print("Skipping", record)
             if not has_duplicate:
-                DbHandler.create_new_row(record, table_name)
-
+                success = DbHandler.create_new_row(record, table_name)
+            if success:
+                count+=1
+        return count
 
     else:
-        print("insert all")
+        print('Creating new table')
+        df.to_sql(table_name, con=connection, if_exists='replace', index=False)
+        return df.shape[0]
 
 
 def check_table(table_name):
@@ -167,5 +173,37 @@ def take_confirmation(root_tk):
     # b3.grid(row=3, column=2)
 
 
-def check_prompt(row, table_name, phys_loc):
-    return Command.APPEND
+def check_prompt(row, table_name, phys_loc, root_tk):
+    command = tk.IntVar()
+    confirmation = Toplevel(root_tk)
+    confirmation.geometry("800x100")
+    data_in_db = DbHandler.get_values_in_physloc(phys_loc, get_columns_names(table_name), table_name)
+    label_data_in_sheet = tk.Label(confirmation, text="Data in sheet:")
+    real_data_in_sheet = tk.Label(confirmation, text=str(row))
+    label_data_in_sheet.grid(row=1,column=1)
+    real_data_in_sheet.grid(row=1,column=2)
+    label_data_in_db = tk.Label(confirmation, text="Data in db:")
+    real_data_in_db = tk.Label(confirmation, text=data_in_db)
+    label_data_in_db.grid(row=2, column=1)
+    real_data_in_db.grid(row=2, column=2)
+
+    button_replace = tk.Button(confirmation, text="Replace", command=lambda :command.set(1))
+    button_append = tk.Button(confirmation, text="Append", command=lambda :command.set(2))
+    button_skip = tk.Button(confirmation, text="Skip", command=lambda :command.set(3))
+
+    button_replace.grid(row=3,column=1)
+    button_append.grid(row=3, column=2)
+    button_skip.grid(row=3, column=3)
+
+    print("Waiting for confirmation")
+    confirmation.waitvar(command)
+    print("Received confirmation")
+    confirmation.destroy()
+
+    if command.get()==1:
+        return Command.REPLACE
+    elif command.get()==2:
+        return Command.APPEND
+    else:
+        return Command.SKIP
+
