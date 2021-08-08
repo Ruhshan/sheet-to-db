@@ -86,16 +86,17 @@ def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
 
         for record in records:
             success = False
-            has_duplicate, phys_loc = DbHandler.check_duplicate(record, table_name, dupeCheckFields)
+            has_duplicate, phys_locs = DbHandler.check_duplicate(record, table_name, dupeCheckFields)
             if has_duplicate:
                 print("Found duplicate for record: ", record)
-                command = check_prompt(record, table_name, phys_loc, tk_root)
-                if command == Command.REPLACE:
-                    success = DbHandler.replace_at_phys_loc(record, table_name, phys_loc)
-                elif command == Command.APPEND:
-                    success = DbHandler.create_new_row(record, table_name)
-                else:
-                    print("Skipping", record)
+                for phys_loc in phys_locs:
+                    command = check_prompt(record, table_name, phys_loc, tk_root)
+                    if command == Command.REPLACE:
+                        success = DbHandler.replace_at_phys_loc(record, table_name, phys_loc)
+                    elif command == Command.APPEND:
+                        success = DbHandler.create_new_row(record, table_name)
+                    else:
+                        print("Skipping", record)
             if not has_duplicate:
                 success = DbHandler.create_new_row(record, table_name)
             if success:

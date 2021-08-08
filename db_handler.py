@@ -8,9 +8,9 @@ class DbHandler:
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
         cursor.execute(check_query_sql)
-        res = cursor.fetchall()
-        if len(res):
-            return True, res[0][-1]
+        rows = cursor.fetchall()
+        if len(rows):
+            return True, [row[-1] for row in rows]
         else:
             return False, None
 
@@ -22,7 +22,7 @@ class DbHandler:
         for (key, value) in row.items():
             if key in dupeCheckFields:
                 where_clauses.append(" [{}]='{}'".format(key, value))
-        return query + " and ".join(where_clauses).replace("\'","'")
+        return query + " or ".join(where_clauses).replace("\'","'")
 
     @classmethod
     def create_new_row(cls, row: dict, table):
