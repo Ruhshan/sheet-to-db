@@ -5,11 +5,33 @@ from utils import *
 from config import config
 from sqlalchemy import create_engine
 from tkinter import *
+import tkinter as ttk
 import tkinter as tk
 # Create object
-root = Tk()
+tk_root = Tk()
 # Adjust size
-root.geometry("600x750")
+tk_root.geometry("600x750")
+
+main_frame = Frame(tk_root)
+main_frame.pack(fill=BOTH, expand=1)
+
+
+my_scrollbar = Scrollbar(main_frame, orient=VERTICAL)
+my_scrollbar.pack(side=RIGHT, fill=Y)
+
+
+my_canvas = Canvas(main_frame, yscrollcommand=my_scrollbar.set)
+my_canvas.pack(side=LEFT,fill=BOTH, expand=1)
+
+my_scrollbar.configure(command=my_canvas.yview)
+
+
+my_canvas.bind('<Configure>', lambda e: my_canvas.configure(scrollregion=my_canvas.bbox("all")))
+
+
+root = Frame(my_canvas)
+
+my_canvas.create_window((0,0),window=root, anchor="nw")
 
 # get table and insert values
 Label(root, text="Enter table Name:").pack(padx=5, pady=5)
@@ -144,8 +166,7 @@ def chooseFields():
         choose_field_frame.pack(side=TOP,fill=X)
 
         df = response_sheets[sheet]
-
-        checkStats = [[BooleanVar(), col] for col in list(df.columns)]
+        checkStats = [[BooleanVar(), col] for col in df.columns]
         stat_count = 1
         label_select_column = Label(choose_field_frame,text="Select columns for insertion")
         label_select_column.grid(sticky="w",row=0, column=1)
