@@ -6,6 +6,8 @@ import pandas as pd
 from collections import Counter
 from tkinter import Toplevel
 import tkinter as tk
+
+from connection_helper import ConnectionHelper
 from db_handler import DbHandler
 from enum import Enum
 
@@ -21,12 +23,7 @@ def get_columns_names(table):
     # declare an empty list for the column names
     columns = []
     params = config()
-    conn = pymssql.connect(
-        database = params['database'],
-        user = params['user'],
-        server = params['host']+":"+params["port"],
-        password = params['password']
-    )
+    conn = ConnectionHelper.getConnection()
 
     # declare cursor objects from the connection
     col_cursor = conn.cursor()
@@ -67,17 +64,6 @@ def get_columns_names(table):
     return columns
 
 
-# def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
-#     #take_confirmation(root_tk=tk_root)
-#     if check_table(table_name):
-#         print("Appeding to existing table")
-#         create_new_column_if_required(table_name, df.columns)
-#         df.to_sql(table_name, con=connection, if_exists='append', index=False)
-#         return df.shape[0]
-#     else:
-#         print('Creating new table')
-#         df.to_sql(table_name, con=connection, if_exists='replace', index=False)
-#         return df.shape[0]
 
 def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
     count = 0
@@ -112,12 +98,7 @@ def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
 def check_table(table_name):
     sql_str = "select * from information_schema.tables where table_schema='dbo' and table_name='{}'".format(table_name)
     params = config()
-    conn = pymssql.connect(
-        database = params['database'],
-        user = params['user'],
-        server = params['host']+":"+params["port"],
-        password = params['password']
-    )
+    conn = ConnectionHelper.getConnection()
     cursor = conn.cursor()
     cursor.execute(sql_str)
     res = cursor.fetchall()
@@ -127,13 +108,7 @@ def check_table(table_name):
 def create_new_column_if_required(table_name, current_df_columns):
     current_table_columns = get_columns_names(table_name)
     params = config()
-    conn = pymssql.connect(
-        database = params['database'],
-        user = params['user'],
-        server = params['host']+":"+params["port"],
-        password = params['password']
-    )
-
+    conn = ConnectionHelper.getConnection()
     for df_column in current_df_columns:
         if df_column not in current_table_columns:
             print("Add {} in {}".format(df_column, table_name))

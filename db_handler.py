@@ -49,7 +49,6 @@ class DbHandler:
     def replace_at_phys_loc(cls, row, table, physLoc):
         converted_physloc = cls.convert_phyloc(physLoc)
         print("Replacing", row, "at", converted_physloc)
-        """ UPDATE msdb.dbo.mytable SET [Shirt size] = N'XXL' WHERE Timestamp LIKE N'8/4/2021 13:10:07' ESCAPE '#' AND Name LIKE N'James' ESCAPE '#' AND [Shirt size] LIKE N'X' ESCAPE '#' AND [Other thoughts or comments] LIKE N'Very very Poor' ESCAPE '#' AND %%physloc%% = 0x1506000001000000"""
         params = config()
         update_query = f"UPDATE {params['database']}.dbo.{table} SET "
         set_clauses = []
@@ -87,8 +86,8 @@ class DbHandler:
         params = config()
         converted_physloc = cls.convert_phyloc(physLoc)
         select_query = f"SELECT * FROM {params['database']}.dbo.{table} WHERE  %%physloc%% = {converted_physloc}"
-        print(physLoc)
-        print(select_query)
+        print("Getting values from:",physLoc)
+        print("Generated Query:",select_query)
 
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
