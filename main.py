@@ -42,7 +42,8 @@ messageLabel = Label(root, text="")
 
 def showColumns():
     tableCols = get_columns_names(tableName.get())
-    messageLabel.config(text=", ".join(tableCols))
+    formatted_col_list = get_formatted_table_cols(tableCols)
+    messageLabel.config(text=formatted_col_list)
     print(tableCols)
 
 

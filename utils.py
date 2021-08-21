@@ -69,7 +69,9 @@ def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
     count = 0
     if check_table(table_name):
         records = df.to_dict('records')
+        current_columns = ['column'+str(i) for i in range(30)]
 
+        create_new_column_if_required(table_name, current_columns)
         for record in records:
             success = False
             has_duplicate, phys_locs = DbHandler.check_duplicate(record, table_name, dupeCheckFields)
@@ -184,3 +186,16 @@ def check_prompt(row, table_name, phys_loc, root_tk):
     else:
         return Command.SKIP
 
+
+def get_formatted_table_cols(list_of_cols):
+    count = 0
+    result_str=""
+    for col in list_of_cols:
+        if count == 7:
+            result_str+=col+",\n"
+            count=0
+        else:
+            result_str+=col+", "
+            count+=1
+
+    return result_str
