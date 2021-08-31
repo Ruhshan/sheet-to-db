@@ -69,7 +69,7 @@ def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
     count = 0
     if check_table(table_name):
         records = df.to_dict('records')
-        current_columns = ['column'+str(i) for i in range(30)]
+        current_columns = list(df.columns)
 
         create_new_column_if_required(table_name, current_columns)
         for record in records:
