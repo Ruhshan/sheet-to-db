@@ -176,7 +176,7 @@ def check_prompt(row, table_name, phys_loc, root_tk):
 
     print("Waiting for confirmation")
     confirmation.waitvar(command)
-    print("Received confirmation")
+    print("Received confirmation:", command.get())
     confirmation.destroy()
 
     if command.get()==1:

@@ -47,6 +47,7 @@ class DbHandler:
 
     @classmethod
     def replace_at_phys_loc(cls, row, table, physLoc):
+        print("________________________")
         converted_physloc = cls.convert_phyloc(physLoc)
         print("Replacing", row, "at", converted_physloc)
         params = config()
@@ -60,12 +61,15 @@ class DbHandler:
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
         try:
+            print("Replacing with query:", update_query)
             cursor.execute(update_query)
             conn.commit()
+            print("------------------------")
             return True
         except Exception as e:
             print("Unable to replace row ", row,"in ",converted_physloc)
             print("Caught Exception", e)
+            print("------------------------")
         return False
 
     @classmethod
