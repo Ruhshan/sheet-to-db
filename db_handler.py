@@ -1,5 +1,7 @@
 from config import config
 from connection_helper import ConnectionHelper
+import codecs
+
 
 class DbHandler:
     @classmethod
@@ -17,7 +19,7 @@ class DbHandler:
     @classmethod
     def create_check_query(cls, row: dict, table, dupeCheckFields):
         params = config()
-        query = "select *, %%physloc%% as physloc from {}.dbo.{} where ".format(params['database'], table)
+        query = "select *, auto_inc_col as physloc from {}.dbo.{} where ".format(params['database'], table)
         where_clauses = []
         for (key, value) in row.items():
             if key in dupeCheckFields:
@@ -48,15 +50,14 @@ class DbHandler:
     @classmethod
     def replace_at_phys_loc(cls, row, table, physLoc):
         print("________________________")
-        converted_physloc = cls.convert_phyloc(physLoc)
-        print("Replacing", row, "at", converted_physloc)
+        print("Replacing", row, "at", physLoc)
         params = config()
         update_query = f"UPDATE {params['database']}.dbo.{table} SET "
         set_clauses = []
         for key,value in row.items():
             set_clauses.append(f"[{key}]=N'{value}'")
 
-        update_query += ",".join(set_clauses) +F" WHERE %%physloc%% = {converted_physloc}"
+        update_query += ",".join(set_clauses) +F" WHERE auto_inc_col = {physLoc}"
 
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
@@ -67,29 +68,15 @@ class DbHandler:
             print("------------------------")
             return True
         except Exception as e:
-            print("Unable to replace row ", row,"in ",converted_physloc)
+            print("Unable to replace row ", row,"in ",physLoc)
             print("Caught Exception", e)
             print("------------------------")
         return False
 
     @classmethod
-    def convert_phyloc(cls, physLoc):
-        stringed = str(physLoc)
-        converted_physloc = "0x" + stringed.replace('\\x', '').replace('b', '').replace("'", "")\
-            .replace("\\a","07")\
-            .replace("\\b","08")\
-            .replace("\\t","09")\
-            .replace('\\n','0A')\
-            .replace('\\v','0B')\
-            .replace('\\f','0C')\
-            .replace("\\r","0D")
-        return converted_physloc
-
-    @classmethod
     def get_values_in_physloc(cls, physLoc, columns, table):
         params = config()
-        converted_physloc = cls.convert_phyloc(physLoc)
-        select_query = f"SELECT * FROM {params['database']}.dbo.{table} WHERE  %%physloc%% = {converted_physloc}"
+        select_query = f"SELECT * FROM {params['database']}.dbo.{table} WHERE  auto_inc_col = {physLoc}"
         print("Getting values from:",physLoc)
         print("Generated Query:",select_query)
 
@@ -103,6 +90,18 @@ class DbHandler:
                 value_in_db[key]=value
 
         return str(value_in_db)
+
+    @classmethod
+    def create_auto_inc_col(cls, table_name, existing_columns):
+        params = config()
+        sql = f"ALTER TABLE {params['database']}.dbo.{table_name} ADD auto_inc_col INT IDENTITY "
+
+        if "auto_inc_col" not in existing_columns:
+            conn = ConnectionHelper.getConnection()
+            cursor = conn.cursor()
+            cursor.execute(sql)
+            conn.commit()
+
 
 
 

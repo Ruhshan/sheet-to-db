@@ -68,6 +68,7 @@ def get_columns_names(table):
 def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
     count = 0
     if check_table(table_name):
+        DbHandler.create_auto_inc_col(table_name, get_columns_names(table_name))
         records = df.to_dict('records')
         current_columns = list(df.columns)
 
@@ -94,6 +95,7 @@ def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
     else:
         print('Creating new table')
         df.to_sql(table_name, con=connection, if_exists='replace', index=False)
+        DbHandler.create_auto_inc_col(table_name, get_columns_names(table_name))
         return df.shape[0]
 
 
