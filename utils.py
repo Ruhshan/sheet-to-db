@@ -67,18 +67,22 @@ def get_columns_names(table):
 
 def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
     count = 0
-    if check_table(table_name):
+    if check_table(table_name): # Following chunk will be executed if the table already exists
+        # Find and set the column which is auto incremented, id of this column will be used further for replacing duplicates
         DbHandler.set_aut_inc(table_name, get_columns_names(table_name))
+        # convert the dataframe to list of dicts
         records = df.to_dict('records')
         current_columns = list(df.columns)
-
+        # create new columns if required
         create_new_column_if_required(table_name, current_columns)
         for record in records:
             success = False
+            # Checking for duplicates for each row
             has_duplicate, phys_locs = DbHandler.check_duplicate(record, table_name, dupeCheckFields)
             if has_duplicate:
                 print("Found duplicate for record: ", record)
                 for phys_loc in phys_locs:
+                    # Take the confirmation with prompt for what to do with the duplicates
                     command = check_prompt(record, table_name, phys_loc, tk_root)
                     if command == Command.REPLACE:
                         success = DbHandler.replace_at_phys_loc(record, table_name, phys_loc)
@@ -87,21 +91,22 @@ def insert_to_db(df,connection, table_name, tk_root, dupeCheckFields):
                     else:
                         print("Skipping", record)
             if not has_duplicate:
+                # just create new row if no duplicate
                 success = DbHandler.create_new_row(record, table_name)
             if success:
                 count+=1
         return count
 
     else:
+        # Create the table and insert all rows at once if the table doesn't exists
         print('Creating new table')
         df.to_sql(table_name, con=connection, if_exists='replace', index=False)
         DbHandler.set_aut_inc(table_name, get_columns_names(table_name))
         return df.shape[0]
 
 
-def check_table(table_name):
+def check_table(table_name):# utility method to check existance of a table
     sql_str = "select * from information_schema.tables where table_schema='dbo' and table_name='{}'".format(table_name)
-    params = config()
     conn = ConnectionHelper.getConnection()
     cursor = conn.cursor()
     cursor.execute(sql_str)
@@ -110,8 +115,9 @@ def check_table(table_name):
     return len(res)!=0
 
 def create_new_column_if_required(table_name, current_df_columns):
+    # utility method to check each column of dataframe in table and create non existant columns
     current_table_columns = get_columns_names(table_name)
-    params = config()
+
     conn = ConnectionHelper.getConnection()
     for df_column in current_df_columns:
         if df_column not in current_table_columns:
@@ -121,39 +127,10 @@ def create_new_column_if_required(table_name, current_df_columns):
             cursor.execute(sql)
             conn.commit()
 
-def take_confirmation(root_tk):
-    confirmation = Toplevel(root_tk)
-    confirmation.geometry("200x300")
-    label_data_in_sheet = tk.Label(confirmation, text="Data in sheet:")
-    real_data_in_sheet = tk.Label(confirmation, text="a=b;c=d;e=f")
-    label_data_in_sheet.grid(row=1,column=1)
-    real_data_in_sheet.grid(row=1,column=2)
-    label_data_in_db = tk.Label(confirmation, text="Data in db:")
-    real_data_in_db = tk.Label(confirmation, text="a=b;c=d;e=f")
-    label_data_in_db.grid(row=2, column=1)
-    real_data_in_db.grid(row=2, column=2)
-
-    button_replace = tk.Button(confirmation, text="Replace")
-    button_append = tk.Button(confirmation, text="Append")
-    button_skip = tk.Button(confirmation, text="Skip")
-
-    button_replace.grid(row=3,column=1)
-    button_append.grid(row=3, column=2)
-    button_skip.grid(row=3, column=3)
-
-    # my_str1 = tk.StringVar()
-    # l1 = tk.Label(confirmation, textvariable=my_str1)
-    # l1.grid(row=1, column=2)
-    # my_str1.set("Hi I am Child window")
-    # b2 = tk.Button(confirmation, text=' Close parent',)
-    # b2.grid(row=2, column=2)
-    #
-    # b3 = tk.Button(confirmation, text=' Close Child',
-    #                command=confirmation.destroy)
-    # b3.grid(row=3, column=2)
 
 
 def check_prompt(row, table_name, phys_loc, root_tk):
+    # Utility method for taking command in case of duplicates found during insertion
     command = tk.IntVar()
     confirmation = Toplevel(root_tk)
     confirmation.geometry("800x100")

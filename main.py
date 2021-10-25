@@ -41,7 +41,9 @@ messageLabel = Label(root, text="")
 
 
 def showColumns():
+    # Fetch column names for selected table
     tableCols = get_columns_names(tableName.get())
+    # Format the list to show in compact manner
     formatted_col_list = get_formatted_table_cols(tableCols)
     messageLabel.config(text=formatted_col_list)
     print(tableCols)
@@ -87,6 +89,7 @@ insertButton = None
 
 
 def refetch_sheet(sheet_name):
+    # fetch data from google sheet
     for ind, sheet in enumerate(client.openall()):
         try:
             # check if this sheet is a response sheet
@@ -100,10 +103,12 @@ def insertData():
     try:
         global checkStats
         global checkDupes
+        # fetch the unmarked rows
         df = get_new_rows(sheetName.get())
         if (df.shape[0]) == 0:
             return
         selectedFields = dict()
+        # detecting the selected fields and if name is modified
         for field in checkStats:
             if not field[0].get():
                 continue
@@ -116,11 +121,14 @@ def insertData():
         if len(selectedFields) == 0:
             return
         selectedFieldsForDupeCheck = []
+
+        # detecting the selected fields for duplication check
         for field in checkDupes:
             if field[0].get() and selectedFields.get(field[1]):
                 selectedFieldsForDupeCheck.append(selectedFields.get(field[1]))
-
+        # extracting selcted columns from the whole data sheet
         df = df[list(selectedFields.keys())]
+        # renaming the columns if required
         df = df.rename(columns=selectedFields, inplace=False)
         params = config()
         engine = create_engine('mssql+pymssql://{user}:{password}@{host}:{port}/{db}'.format(
@@ -137,9 +145,10 @@ def insertData():
         if (table == ''):
             messageLabel.config(text="enter a valid table name")
             return
-        # df.to_sql(table, con=conn, if_exists='replace', index=False)
+        # initiate inserting new rows in db
         new_rows_count = insert_to_db(df, conn, table, root, selectedFieldsForDupeCheck)
         messageLabel.config(text="Insert Successful! with {} rows".format(new_rows_count))
+        # mark the inserted rows in the sheet
         mark_unmarked_rows(sheetName.get())
     except Exception as e:
         print(e)
