@@ -7,14 +7,18 @@ class DbHandler:
     auto_inc_col = None
     @classmethod
     def check_duplicate(cls, record: dict, tableName: str, dupeCheckFields: list):
+        # Creating query string for duplicate check
         check_query_sql = cls.create_check_query(record, tableName, dupeCheckFields)
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
         cursor.execute(check_query_sql)
+        # fetching the rows from db returned by query
         rows = cursor.fetchall()
         if len(rows):
+            # When duplicate found return True, [id of rows where duplicated found]
             return True, [row[-1] for row in rows]
         else:
+            # When duplicate not found return False, None
             return False, None
 
     @classmethod
@@ -34,12 +38,13 @@ class DbHandler:
         query = f"INSERT INTO {params['database']}.dbo.{table} "
         keys = [f"[{key}]" for key in row.keys()]
         values = [f"N'{value}'" for value in row.values()]
-
+        # Constructed final insert query
         final_insert_query = query +f" ({', '.join(keys)}) VALUES ({', '.join(values)})"
 
         conn = ConnectionHelper.getConnection()
         try:
             cursor = conn.cursor()
+            # execute and commit the insert query
             cursor.execute(final_insert_query)
             conn.commit()
             return True
@@ -57,13 +62,14 @@ class DbHandler:
         set_clauses = []
         for key,value in row.items():
             set_clauses.append(f"[{key}]=N'{value}'")
-
+        # constructed the update query
         update_query += ",".join(set_clauses) +F" WHERE {cls.auto_inc_col} = {physLoc}"
 
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
         try:
             print("Replacing with query:", update_query)
+            # execute and commit update query
             cursor.execute(update_query)
             conn.commit()
             print("------------------------")
@@ -77,6 +83,7 @@ class DbHandler:
     @classmethod
     def get_values_in_physloc(cls, physLoc, columns, table):
         params = config()
+        # generating selct query to fetch a the row at given id
         select_query = f"SELECT * FROM {params['database']}.dbo.{table} WHERE  {cls.auto_inc_col} = {physLoc}"
         print("Getting values from:",physLoc)
         print("Generated Query:",select_query)
@@ -86,6 +93,7 @@ class DbHandler:
         cursor.execute(select_query)
         value_in_db = {}
         res = cursor.fetchall()
+        # constructing the key value pair to be show with the prompt
         if len(res)>0:
             for key,value in list(zip(columns, res[0])):
                 value_in_db[key]=value
@@ -109,17 +117,20 @@ class DbHandler:
         params = config()
         database = params["database"]
         for column in existing_columns:
+            # construct query to check existing auto_inc_column
             sql = f"select columnproperty(object_id('{database}.dbo.{table}'),'{column}','IsIdentity')"
             conn = ConnectionHelper.getConnection()
             cursor = conn.cursor()
             cursor.execute(sql)
             res = cursor.fetchall()
             if res[0][0] == 1:
+                # if found set the value in auto_inc_col
                 cls.auto_inc_col = column
                 print(f"Existing auto inc column {column} found.")
                 break
 
         if cls.auto_inc_col is None:
+            # if not found create a new auto_inc_column
             cls.create_auto_inc_col(table)
 
 

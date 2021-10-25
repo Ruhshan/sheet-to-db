@@ -9,6 +9,7 @@ class ConnectionHelper:
     def getConnection(cls):
         params = config()
         if cls.conn is None:
+            # if conn is none, create a connection and return it
             cls.conn = pymssql.connect(
                 database=params['database'],
                 user=params['user'],
@@ -17,4 +18,5 @@ class ConnectionHelper:
             )
             return cls.conn
         else:
+            # if conn is not none return it
             return cls.conn
