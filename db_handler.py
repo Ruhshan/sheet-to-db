@@ -4,6 +4,7 @@ import codecs
 
 
 class DbHandler:
+    auto_inc_col = None
     @classmethod
     def check_duplicate(cls, record: dict, tableName: str, dupeCheckFields: list):
         check_query_sql = cls.create_check_query(record, tableName, dupeCheckFields)
@@ -19,7 +20,7 @@ class DbHandler:
     @classmethod
     def create_check_query(cls, row: dict, table, dupeCheckFields):
         params = config()
-        query = "select *, auto_inc_col as physloc from {}.dbo.{} where ".format(params['database'], table)
+        query = "select *, {} as physloc from {}.dbo.{} where ".format(cls.auto_inc_col, params['database'], table)
         where_clauses = []
         for (key, value) in row.items():
             if key in dupeCheckFields:
@@ -57,7 +58,7 @@ class DbHandler:
         for key,value in row.items():
             set_clauses.append(f"[{key}]=N'{value}'")
 
-        update_query += ",".join(set_clauses) +F" WHERE auto_inc_col = {physLoc}"
+        update_query += ",".join(set_clauses) +F" WHERE {cls.auto_inc_col} = {physLoc}"
 
         conn = ConnectionHelper.getConnection()
         cursor = conn.cursor()
@@ -76,7 +77,7 @@ class DbHandler:
     @classmethod
     def get_values_in_physloc(cls, physLoc, columns, table):
         params = config()
-        select_query = f"SELECT * FROM {params['database']}.dbo.{table} WHERE  auto_inc_col = {physLoc}"
+        select_query = f"SELECT * FROM {params['database']}.dbo.{table} WHERE  {cls.auto_inc_col} = {physLoc}"
         print("Getting values from:",physLoc)
         print("Generated Query:",select_query)
 
@@ -92,18 +93,34 @@ class DbHandler:
         return str(value_in_db)
 
     @classmethod
-    def create_auto_inc_col(cls, table_name, existing_columns):
+    def create_auto_inc_col(cls, table_name):
         params = config()
         sql = f"ALTER TABLE {params['database']}.dbo.{table_name} ADD auto_inc_col INT IDENTITY "
+        print("No existing auto inc column found auto_inc_col is being created")
+        conn = ConnectionHelper.getConnection()
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        conn.commit()
+        cls.auto_inc_col = "auto_inc_col"
 
-        if "auto_inc_col" not in existing_columns:
+
+    @classmethod
+    def set_aut_inc(cls, table, existing_columns):
+        params = config()
+        database = params["database"]
+        for column in existing_columns:
+            sql = f"select columnproperty(object_id('{database}.dbo.{table}'),'{column}','IsIdentity')"
             conn = ConnectionHelper.getConnection()
             cursor = conn.cursor()
             cursor.execute(sql)
-            conn.commit()
+            res = cursor.fetchall()
+            if res[0][0] == 1:
+                cls.auto_inc_col = column
+                print(f"Existing auto inc column {column} found.")
+                break
 
-
-
+        if cls.auto_inc_col is None:
+            cls.create_auto_inc_col(table)
 
 
 

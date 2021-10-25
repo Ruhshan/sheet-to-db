@@ -5,13 +5,10 @@ from config import config
 from sqlalchemy import create_engine
 from utils import insert_to_db
 
+from db_handler import DbHandler
+
 if __name__ == "__main__":
-    stringed = b'\x14\x0b\x00\x01\x002\x00'.hex()
-
-    converted_physloc = "0x" + stringed
-
-    print(type(converted_physloc))
-
+    DbHandler.set_aut_inc("mytable",['Shirt size', 'Other thoughts or comments', 'auto_inc_col', 'Timestamp', 'uid'])
     # root = Tk()
     # # Adjust size
     # root.geometry("600x750")
